@@ -5,8 +5,8 @@ pub mod terrain {
     use three_d::{vec3, CpuMesh, Vec3};
 
     // Number of points in the map
-    const WIDTH: usize = 512;
-    const HEIGHT: usize = 512;
+    const WIDTH: usize = 128;
+    const HEIGHT: usize = 128;
 
 
     

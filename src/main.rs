@@ -1,5 +1,6 @@
 pub mod ribbon;
 pub mod terrain;
+pub mod wireframe;
 
 // Entry point for non-wasm
 #[cfg(not(target_arch = "wasm32"))]
@@ -9,6 +10,7 @@ async fn main() {
 }
 
 
+use crate::wireframe::wireframe::apply_wireframe;
 use terrain::terrain::*;
 use three_d::*;
 
@@ -60,13 +62,14 @@ pub async fn run() {
 
 
     let cpu_mesh: CpuMesh = create_map_terrain();
+    let wireframe = apply_wireframe(&context, &cpu_mesh);
 
     // Mesh
     let mut mesh = Gm::new(
         Mesh::new(&context, &cpu_mesh),
         material,
     );
-    mesh.set_transformation(Mat4::from_nonuniform_scale(10.0, 4.0, 10.0));
+    mesh.set_transformation(Mat4::from_nonuniform_scale(50.0, 20.0, 50.0));
 
 
     window.render_loop(move |mut frame_input| {
@@ -77,7 +80,7 @@ pub async fn run() {
             .clear(ClearState::color_and_depth(CLEARCOLOR.0, CLEARCOLOR.1, CLEARCOLOR.2, CLEARCOLOR.3, CLEARCOLOR.4))
             .render(
                 &camera,
-                &mesh,
+                &wireframe,
                 &[&light0, &ambient],
             );
 
