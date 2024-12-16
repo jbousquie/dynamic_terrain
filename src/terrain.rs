@@ -4,8 +4,11 @@ pub mod terrain {
     use crate::ribbon::ribbon::*;
     use three_d::{vec3, CpuMesh, Vec3};
 
+    // Number of points in the map
     const WIDTH: usize = 512;
     const HEIGHT: usize = 512;
+
+
     
     // Create and configure the FastNoise object
     pub fn create_noise() -> [[f32; HEIGHT]; WIDTH] {
@@ -14,7 +17,6 @@ pub mod terrain {
         noise.set_seed(Some(2000));
         noise.set_frequency(Some(0.018));
         
-
         let mut noise_data = [[0.; HEIGHT]; WIDTH];
         
         // Sample noise pixels
@@ -32,12 +34,14 @@ pub mod terrain {
     }
 
     pub fn create_map() -> Vec<Vec<Vec3>> {
+        let hw = WIDTH as f32 * 0.5;
+        let hh = HEIGHT as f32 * 0.5;
         let noise_data = create_noise();
         let mut paths = Vec::new();
         for x in 0..WIDTH {
            let mut path = Vec::new();
            for y in 0..HEIGHT {
-               path.push(vec3(x as f32, noise_data[x][y] * 10.0, y as f32));
+               path.push(vec3(x as f32 - hw, noise_data[x][y] * 10.0, y as f32 - hh));
            }
            paths.push(path);
         }

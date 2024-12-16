@@ -28,7 +28,7 @@ pub async fn run() {
 
     let mut camera = Camera::new_perspective(
         window.viewport(),
-        vec3(0.0, 500.0, 1000.0),
+        vec3(0.0, 800.0, 1000.0),
         vec3(0.0, 0.0, 0.0),
         vec3(0.0, 1.0, 0.0),
         degrees(45.0),
