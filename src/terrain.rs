@@ -2,7 +2,7 @@ pub mod terrain {
     use fastnoise_lite::*;
 
     use crate::ribbon::ribbon::*;
-    use three_d::{vec3, CpuMesh};
+    use three_d::{vec3, CpuMesh, Vec3};
 
     const WIDTH: usize = 512;
     const HEIGHT: usize = 512;
@@ -25,27 +25,28 @@ pub mod terrain {
                 
                 let negative_1_to_1 = noise.get_noise_2d(x as f32, y as f32);
                 // You may want to remap the -1..1 range data to the 0..1 range:
-                noise_data[x][y] = (negative_1_to_1 + 1.) / 2.;
-                
-                // (Uses of `as f32` above should become `as f64` if you're using FNL with the "f64" feature flag)
+                noise_data[x][y] = (negative_1_to_1 + 1.) / 2.;                
             }
         }
         noise_data
     }
 
-    pub fn create_terrain() -> CpuMesh {
+    pub fn create_map() -> Vec<Vec<Vec3>> {
         let noise_data = create_noise();
-        let hh = HEIGHT as f32 * 0.5 ;
-        let hw = WIDTH as f32 * 0.5;
         let mut paths = Vec::new();
         for x in 0..WIDTH {
            let mut path = Vec::new();
            for y in 0..HEIGHT {
-               path.push(vec3(x as f32 - hw, noise_data[x][y] * 10.0, y as f32 - hh));
+               path.push(vec3(x as f32, noise_data[x][y] * 10.0, y as f32));
            }
            paths.push(path);
         }
-        let ribbon = create_ribbon(&paths);
+        paths
+    }
+
+    pub fn create_map_terrain() -> CpuMesh {
+        let map = create_map();
+        let ribbon = create_ribbon(&map);
         ribbon.into()
     }
 }

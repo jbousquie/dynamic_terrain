@@ -9,7 +9,7 @@ async fn main() {
 }
 
 
-use terrain::terrain::create_terrain;
+use terrain::terrain::*;
 use three_d::*;
 
 const GROUNDFILE : &str = "assets/ground.jpeg";
@@ -59,7 +59,7 @@ pub async fn run() {
 
 
 
-    let cpu_mesh: CpuMesh = create_terrain();
+    let cpu_mesh: CpuMesh = create_map_terrain();
 
     // Mesh
     let mut mesh = Gm::new(
