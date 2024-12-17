@@ -2,7 +2,7 @@ pub mod terrain {
     use fastnoise_lite::*;
 
     use crate::ribbon::ribbon::*;
-    use three_d::{vec3, CpuMesh, Vec3};
+    use three_d::{context::NAME_LENGTH, vec3, CpuMesh, Vec3};
 
     // Number of points in the map
     // set the same value for both WIDTH and HEIGHT
@@ -11,13 +11,23 @@ pub mod terrain {
 
     pub struct Map {
         pub coords: Vec<Vec<Vec3>>,
+        pub length: f32,
+        pub subdivisions: usize,
+        pub average_sub_size: f32
+
     }
     impl Map {
 
         pub fn new() -> Self {
             let coords = Self::create_map();
+            let l = coords.len();
+            let length = (coords[0][l - 1].x - coords[0][0].x).abs();
+            let average_sub_size = length / l as f32;
             Map {
                 coords,
+                length,
+                subdivisions: l,
+                average_sub_size
             }
         }
         
@@ -42,8 +52,8 @@ pub mod terrain {
         pub fn create_noise() -> Vec<Vec<f32>> {
             let mut noise = FastNoiseLite::new();
             noise.set_noise_type(Some(NoiseType::OpenSimplex2));
-            noise.set_seed(Some(200));
-            noise.set_frequency(Some(0.05));
+            noise.set_seed(Some(20));
+            noise.set_frequency(Some(0.015));
             
             let mut noise_data = vec![vec![0.; HEIGHT]; WIDTH];
            
@@ -55,9 +65,7 @@ pub mod terrain {
                     
                     let negative_1_to_1 = noise.get_noise_2d(x as f32, y as f32);
                     // You may want to remap the -1..1 range data to the 0..1 range:
-                    noise_data[x][y] = (negative_1_to_1 + 1.) / 2.;
-                    
-                    // (Uses of `as f32` above should become `as f64` if you're using FNL with the "f64" feature flag)
+                    noise_data[x][y] = (negative_1_to_1 + 1.) / 2.;                   
                 }
             }
             noise_data
@@ -75,16 +83,32 @@ pub mod terrain {
 
     pub struct Terrain<'a> {
         pub map: &'a Map,
-        pub size: usize,
+        pub size: usize,            // nb of cells in the terrain edge
+        pub length: f32,            // length of the terrain edge
         pub mesh: CpuMesh,
+        pub position: Vec3,
+        pub sub_tolerance: i32,   // how many cells flyable over by the camera on the terrain axis before trigger an update
+        camera_pos: Vec3,
+        delta_sub_x: i32,         // how many cells flought over thy the camera on the terrain x axis 
+        delta_sub_z: i32,         // how many cells flought over thy the camera on the terrain x axis 
     }
     impl<'a> Terrain<'a> {
         pub fn new(map: &'a Map, size: usize) -> Self {
             let mesh = Self::create_mesh(&map.coords, size);
+            let ht = (size as f32 * 0.5) as usize;
+            let hm = (map.subdivisions as f32 * 0.5) as usize;
+            let terrain_index = hm - ht;
+            let length = (map.coords[0][terrain_index + size - 1].x - map.coords[0][terrain_index].x).abs();
             Terrain {
                 map,
                 size,
+                length,
                 mesh,
+                position: vec3(0.0, 0.0, 0.0),
+                sub_tolerance: 1,
+                camera_pos: vec3(0.0, 0.0, 0.0),
+                delta_sub_x: 0,
+                delta_sub_z: 0,
             }
         }
         // create a terrain mesh
@@ -105,14 +129,26 @@ pub mod terrain {
             ribbon.into()
         }
 
+        // https://github.com/BabylonJS/Extensions/blob/master/DynamicTerrain/src/babylon.dynamicTerrain.ts#L470
+        pub fn update(&mut self, ) {
+            let delta_x= self.position.x - self.camera_pos.x; 
+            let delta_z= self.position.z - self.camera_pos.z;
+            let map_shift = self.map.average_sub_size * self.sub_tolerance as f32;  // threshold to trigger the terrain update in every direction x or z
+            let mut map_flgt_nb_x: i32 = 0;    // number (+/-) of map cells on the x axis flought over by the camera in the delta shift
+            let mut map_flgt_nb_z = 0;    // number (+/-) of map cells on the z axis flought over by the camera in the delta shift
+            if delta_x.abs() > map_shift {
+                map_flgt_nb_x = (delta_x / self.map.average_sub_size).abs() as i32;
+                self.position.x  += map_shift * map_flgt_nb_x as f32;
+                self.delta_sub_x += map_flgt_nb_x  * self.sub_tolerance;
+            } 
+
+
+        }
+
         
     }
 
 
 
-    pub fn move_terrain(terrain: &mut CpuMesh, map: &Vec<Vec<Vec3>>, direction: Vec3, delta: f32) {
-        let mut positions = terrain.positions.to_f32();
 
-
-    }
 }
