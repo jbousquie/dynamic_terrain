@@ -46,32 +46,18 @@ pub mod terrain {
             noise.set_frequency(Some(0.05));
             
             let mut noise_data = vec![vec![0.; HEIGHT]; WIDTH];
-            
+           
             // Sample noise pixels
             for x in 0..WIDTH {
                 for y in 0..HEIGHT {
-                    pub fn create_map() -> Vec<Vec<Vec3>> {
-                        let scl_x = 5.0;
-                        let scl_y = 50.0;
-                        let scl_z = 5.0;
-                        let hw = WIDTH as f32 * 0.5;
-                        let hh = HEIGHT as f32 * 0.5;
-                        let noise_data = Map::create_noise();
-                        let mut paths = Vec::new();
-                        for x in 0..WIDTH {
-                           let mut path = Vec::new();
-                           for y in 0..HEIGHT {
-                               path.push(vec3((x as f32 - hw) * scl_x, noise_data[x][y] * scl_y, (y as f32 - hh) * scl_z));
-                           }
-                           paths.push(path);
-                        }
-                        paths
-                    }   // Domain warp can optionally be employed to transform the coordinates before sampling:
-                    //let (x1, y1) = noise.domain_warp_2d(x as f32, y as f32);
+                    // Domain warp can optionally be employed to transform the coordinates before sampling:
+                    // let (x, y) = noise.domain_warp_2d(x as f32, y as f32);
                     
                     let negative_1_to_1 = noise.get_noise_2d(x as f32, y as f32);
                     // You may want to remap the -1..1 range data to the 0..1 range:
-                    noise_data[x][y] = (negative_1_to_1 + 1.) / 2.;                
+                    noise_data[x][y] = (negative_1_to_1 + 1.) / 2.;
+                    
+                    // (Uses of `as f32` above should become `as f64` if you're using FNL with the "f64" feature flag)
                 }
             }
             noise_data
