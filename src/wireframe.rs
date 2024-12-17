@@ -7,16 +7,16 @@ pub mod wireframe {
         let mut wireframe_material = PhysicalMaterial::new_opaque(
             &context,
             &CpuMaterial {
-                albedo: Srgba::new_opaque(220, 50, 50),
+                albedo: Srgba::new_opaque(255, 200, 200),
                 roughness: 0.7,
                 metallic: 0.8,
                 ..Default::default()
             },
         );
     wireframe_material.render_states.cull = Cull::Back;
-    let mut cylinder = CpuMesh::cylinder(3);
+    let mut cylinder = CpuMesh::cylinder(6);
     cylinder
-        .transform(Mat4::from_nonuniform_scale(1.0, 0.007, 0.007))
+        .transform(Mat4::from_nonuniform_scale(1.0, 0.01, 0.01))
         .unwrap();
     let edges = Gm::new(
         Box::new(InstancedMesh::new(&context, &edge_transformations(&cpu_mesh), &cylinder)),
