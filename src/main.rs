@@ -1,5 +1,5 @@
 pub mod ribbon;
-pub mod terrain;
+pub mod dt;
 pub mod wireframe;
 
 // Entry point for non-wasm
@@ -11,7 +11,6 @@ async fn main() {
 
 
 use crate::wireframe::wireframe::apply_wireframe;
-use terrain::terrain::*;
 use three_d::*;
 
 const GROUNDFILE : &str = "assets/ground.jpeg";
@@ -35,7 +34,7 @@ pub async fn run() {
         vec3(0.0, 1.0, 0.0),
         degrees(45.0),
         0.1,
-        10000.0,
+        60000.0,
     );
     let mut control = OrbitControl::new(camera.target(), 0.5, 10000.0);
     let light0 = DirectionalLight::new(&context, 1.0, Srgba::WHITE, vec3(0.0, -0.1, -0.25));
@@ -60,14 +59,14 @@ pub async fn run() {
 
 
 
-    let map = create_map();
-    let cpu_mesh: CpuMesh = create_map_terrain(&map);
-    let terrain = create_terrain(&map, 30);
-    let wireframe = apply_wireframe(&context, &terrain);
+    let map = dt::terrain::Map::new();
+    let map_mesh: CpuMesh = map.create_mesh(&map.coords);
+    let terrain = dt::terrain::Terrain::new(&map, 30);
+    let wireframe = apply_wireframe(&context, &terrain.mesh);
 
-    // Mesh
+    // Map mesh
     let mut mesh = Gm::new(
-        Mesh::new(&context, &cpu_mesh),
+        Mesh::new(&context, &map_mesh),
         material,
     );
     mesh.set_transformation(Matrix4::from_translation(vec3(0.0, -5.0, 0.0))); // slide down the map ribbon
