@@ -55,14 +55,14 @@ pub async fn run() {
         //albedo_texture: Some(cpu_texture),
         ..Default::default()
     };
-    let material = PhysicalMaterial::new_opaque(&context, &cpu_material);
+   let material = PhysicalMaterial::new_opaque(&context, &cpu_material);
 
 
 
     let map = dt::terrain::Map::new();
     let map_mesh: CpuMesh = map.create_mesh(&map.coords);
-    let terrain = dt::terrain::Terrain::new(&map, 30);
-    let wireframe = apply_wireframe(&context, &terrain.mesh);
+    let terrain = dt::terrain::Terrain::new(&context, &map, 30, cpu_material);
+    let wireframe = apply_wireframe(&context, &terrain.cpu_mesh);
 
     // Map mesh
     let mut mesh = Gm::new(

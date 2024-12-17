@@ -1,7 +1,7 @@
 pub mod ribbon {
 
     use three_d::Indices;
-    use three_d::Mesh;
+    use three_d::renderer::geometry::Mesh;
     use three_d::Positions;
     use three_d_asset::TriMesh;
     use three_d::Vec3;
@@ -117,11 +117,4 @@ pub mod ribbon {
         vb_pos.fill(&positions);
     }
 
-    pub fn update_paths(paths: &mut Vec<Vec<Vec3>>, t: f32) {
-        for i in 0..paths.len() {
-            for j in 0..paths[i].len() {
-                paths[i][j].z = paths[i][j].x * ((i + j) as f32 * 0.1).sin() * (t * 0.01).cos() * 0.3;
-            }
-        }
-    }
 }
