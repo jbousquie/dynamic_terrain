@@ -2,7 +2,7 @@ pub mod terrain {
     use fastnoise_lite::*;
 
     use crate::ribbon::ribbon::*;
-    use three_d::{context::DELETE_STATUS, vec3, Context, CpuMaterial, CpuMesh, Gm, Mesh, PhysicalMaterial, Vec3};
+    use three_d::{vec3, Context, CpuMaterial, CpuMesh, Gm, Mesh, PhysicalMaterial, Vec3};
     use std::rc::Rc;
 
     // Number of points in the map
@@ -34,8 +34,8 @@ pub mod terrain {
         
         pub fn create_map() -> Vec<Vec<Vec3>> {
             let scl_x = 5.0;
-            let scl_y: f32 = 60.0;
-            let scl_z = 5.0;
+            let scl_y: f32 = 100.0;
+            let scl_z = scl_x;
             let hw = WIDTH as f32 * 0.5;
             let hh = HEIGHT as f32 * 0.5;
             let noise_data = Self::create_noise();
@@ -89,6 +89,7 @@ pub mod terrain {
         pub cpu_mesh: CpuMesh,
         pub cpu_material: CpuMaterial,
         pub mesh: Gm<Mesh, PhysicalMaterial>,
+        pub paths: Vec<Vec<Vec3>>,
         pub position: Vec3,
         pub sub_tolerance: i32,   // how many cells flyable over by the camera on the terrain axis before trigger an update
         pub camera_pos: Vec3,
@@ -97,7 +98,7 @@ pub mod terrain {
     }
     impl Terrain {
         pub fn new(context: &Context, map: Rc<Map>, size: usize, cpu_material: CpuMaterial) -> Self {
-            let cpu_mesh: CpuMesh = Self::create_cpu_mesh(&map.coords, size);
+            let (cpu_mesh, paths) = Self::create_cpu_mesh(&map.coords, size);
             let ht = (size as f32 * 0.5) as usize;                      // half size of the terrain in quads
             let hm = (map.subdivisions as f32 * 0.5) as usize;          // half size of the map in quads
             let terrain_index = hm - ht;                                // index of the first quad of the terrain in the map
@@ -121,15 +122,16 @@ pub mod terrain {
                 cpu_mesh,
                 cpu_material,
                 mesh,
+                paths,
                 position,
                 sub_tolerance: 1,
-                camera_pos: vec3(0.0, 0.0, 0.0),
+                camera_pos: Vec3::new(0.0, 0.0, 0.0),
                 delta_sub_x,
                 delta_sub_z,
             }
         }
         // create a terrain mesh
-        pub fn create_cpu_mesh(coords: &Vec<Vec<Vec3>>, size: usize) -> CpuMesh {
+        pub fn create_cpu_mesh(coords: &Vec<Vec<Vec3>>, size: usize) -> (CpuMesh, Vec<Vec<Vec3>>) {
             let ht = (size as f32 * 0.5) as usize;
             let hm = (coords.len() as f32 * 0.5) as usize;
             let start_index = hm - ht;
@@ -143,7 +145,7 @@ pub mod terrain {
                 paths.push(path);
             }
             let ribbon = create_ribbon(&paths);
-            ribbon.into()
+            (ribbon.into(), paths)
         }
 
         // https://github.com/BabylonJS/Extensions/blob/master/DynamicTerrain/src/babylon.dynamicTerrain.ts#L470
@@ -180,18 +182,20 @@ pub mod terrain {
         }
 
         pub fn update_mesh(&mut self) {
-            let mut paths = vec!();
+            //let mut paths = vec!();
             for i in 0..self.size {
-                let mut path = vec!();
+                //let mut path = vec!();
                 let map_i = Self::modulo(self.delta_sub_x + i as i32, self.map.subdivisions as i32);
                 for j in 0..self.size {
                     let map_j = Self::modulo(self.delta_sub_z + j as i32, self.map.subdivisions as i32);
                     let v3 = self.map.coords[map_i as usize][map_j as usize];
-                    path.push(v3);
+                    //path.push(v3);
+                    self.paths[i][j].y = v3.y;
                 }
-                paths.push(path);
+                //paths.push(path);
             }
-            morph_ribbon(&mut self.mesh.geometry, &mut &paths);
+            //morph_ribbon(&mut self.mesh.geometry, &mut &paths);
+            morph_ribbon(&mut self.mesh.geometry, &mut &self.paths);
         }
     }
 
