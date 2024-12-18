@@ -12,6 +12,7 @@ async fn main() {
 
 use crate::wireframe::wireframe::apply_wireframe;
 use three_d::*;
+use std::rc::Rc;
 
 const GROUNDFILE : &str = "assets/ground.jpeg";
 const GROUNDASSET : &str = "ground";
@@ -50,37 +51,44 @@ pub async fn run() {
     cpu_texture.wrap_t = Wrapping::Repeat;
     cpu_texture.mipmap = mipmap;
     cpu_texture.data.to_color();
-    let cpu_material = CpuMaterial {
+    let cpu_material_map = CpuMaterial {
         albedo: Srgba { r: 220, g: 220, b: 255, a: 255, },
         //albedo_texture: Some(cpu_texture),
         ..Default::default()
     };
-   let material = PhysicalMaterial::new_opaque(&context, &cpu_material);
+   let material_map = PhysicalMaterial::new_opaque(&context, &cpu_material_map);
+   
+   let cpu_material_terrain = CpuMaterial {
+        albedo: Srgba { r: 255, g: 100, b: 100, a: 100, },
+        //albedo_texture: Some(cpu_texture),
+        ..Default::default()
+    };
 
-
-
-    let map = dt::terrain::Map::new();
+    let map = Rc::new(dt::terrain::Map::new());
     let map_mesh: CpuMesh = map.create_mesh(&map.coords);
-    let terrain = dt::terrain::Terrain::new(&context, &map, 30, cpu_material);
-    let wireframe = apply_wireframe(&context, &terrain.cpu_mesh);
+    let mut terrain = dt::terrain::Terrain::new(&context, Rc::clone(&map), 30, cpu_material_terrain);
+    //let wireframe = apply_wireframe(&context, &terrain.cpu_mesh);
 
     // Map mesh
-    let mut mesh = Gm::new(
-        Mesh::new(&context, &map_mesh),
-        material,
-    );
+    let mut mesh = Gm::new(Mesh::new(&context, &map_mesh), material_map);
     mesh.set_transformation(Matrix4::from_translation(vec3(0.0, -5.0, 0.0))); // slide down the map ribbon
 
+
+    terrain.camera_pos.x = terrain.position.x;
+    terrain.camera_pos.z = terrain.position.z;
 
     window.render_loop(move |mut frame_input| {
         camera.set_viewport(frame_input.viewport);
         control.handle_events(&mut camera, &mut frame_input.events);
+        terrain.camera_pos.x += 1.0;
+        terrain.camera_pos.z += 0.5;
+        terrain.update();
         frame_input
             .screen()
             .clear(ClearState::color_and_depth(CLEARCOLOR.0, CLEARCOLOR.1, CLEARCOLOR.2, CLEARCOLOR.3, CLEARCOLOR.4))
             .render(
                 &camera,
-                mesh.into_iter().chain(&wireframe),
+                mesh.into_iter().chain(&terrain.mesh),
                 &[&light0, &ambient],
             );
 
