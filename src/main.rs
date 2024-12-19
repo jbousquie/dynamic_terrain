@@ -75,7 +75,7 @@ pub async fn run() {
     let map = Rc::new(dt::terrain::Map::new());
     let map_mesh: CpuMesh = map.create_mesh(&map.coords);
     let mut terrain = dt::terrain::Terrain::new(&context, Rc::clone(&map), 30, cpu_material_terrain);
-    let wireframe = apply_wireframe(&context, &terrain.cpu_mesh);
+    //let wireframe = apply_wireframe(&context, &terrain.cpu_mesh);
 
     // Map mesh
     let mut mesh = Gm::new(Mesh::new(&context, &map_mesh), material_map);
@@ -94,13 +94,13 @@ pub async fn run() {
         // if let Some(texture) = terrain.mesh.material.albedo_texture.as_mut() {
         //     texture.transformation = Mat3::from_angle_z(radians(terrain.camera_pos.x * 0.01));
         // }
-        //terrain.update();
+        terrain.update();
         frame_input
             .screen()
             .clear(ClearState::color_and_depth(CLEARCOLOR.0, CLEARCOLOR.1, CLEARCOLOR.2, CLEARCOLOR.3, CLEARCOLOR.4))
             .render(
                 &camera,
-                mesh.into_iter().chain(&terrain.mesh).chain(&wireframe),
+                mesh.into_iter().chain(&terrain.mesh),
                 &[&light0, &ambient],
             );
 
