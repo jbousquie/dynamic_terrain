@@ -2,7 +2,7 @@ pub mod terrain {
     use fastnoise_lite::*;
 
     use crate::ribbon::ribbon::*;
-    use three_d::{vec3, Context, CpuMaterial, CpuMesh, Gm, Mesh, PhysicalMaterial, Vec3};
+    use three_d::{vec3, ColorMaterial, Context, CpuMaterial, CpuMesh, Gm, Mesh, PhysicalMaterial, Vec3};
     use std::rc::Rc;
 
     // Number of points in the map
@@ -114,7 +114,6 @@ pub mod terrain {
             let delta_nb_sub_z = (z - map.coords[0][0].z) / map.average_sub_size as f32;
             let delta_sub_x = if delta_nb_sub_x > 0.0 { delta_nb_sub_x as i32 } else { delta_nb_sub_x as i32 + 1 };
             let delta_sub_z = if delta_nb_sub_z > 0.0 { delta_nb_sub_z as i32 } else { delta_nb_sub_z as i32 + 1 };
-            println!("delta_sub_x: {}, delta_sub_z: {}", delta_sub_x, delta_sub_z);
             Terrain {
                 map,
                 size,
@@ -135,10 +134,11 @@ pub mod terrain {
             let ht = (size as f32 * 0.5) as usize;
             let hm = (coords.len() as f32 * 0.5) as usize;
             let start_index = hm - ht;
+            let nb_vertices = size + 1;
             let mut paths = Vec::new();
-            for i in 0..size {
+            for i in 0..nb_vertices{
                 let mut path = Vec::new();
-                for j in 0..size {
+                for j in 0..nb_vertices {
                     let v3 = coords[start_index + i][start_index + j].clone();
                     path.push(v3);
                 }
@@ -183,10 +183,11 @@ pub mod terrain {
 
         pub fn update_mesh(&mut self) {
             //let mut paths = vec!();
-            for i in 0..self.size {
+            let nb_vertices = self.size + 1;
+            for i in 0..nb_vertices {
                 //let mut path = vec!();
                 let map_i = Self::modulo(self.delta_sub_x + i as i32, self.map.subdivisions as i32);
-                for j in 0..self.size {
+                for j in 0..nb_vertices {
                     let map_j = Self::modulo(self.delta_sub_z + j as i32, self.map.subdivisions as i32);
                     let v3 = self.map.coords[map_i as usize][map_j as usize];
                     //path.push(v3);

@@ -45,6 +45,7 @@ pub mod ribbon {
 
         // positions
         for i in 0..p {
+            u_total_distance = 0.0;
             for j in 0..l {
                 let v3 = paths[i][j].clone();
                 positions.push(v3);
@@ -55,9 +56,11 @@ pub mod ribbon {
             }
         }
 
+
         // uvs
         // compute vertical distances for v values  
         for j in 0..l {
+            v_total_distance = 0.0;
             for i in 0..p {
                 if i > 0 {
                     v_total_distance += (paths[i][j] - paths[i - 1][j]).magnitude();
@@ -69,7 +72,7 @@ pub mod ribbon {
         for i in 0..p {
             for j in 0..l {
                 let u = u_distances[i][j] / u_total_distance;
-                let v = 1.0 - v_distances[j][i] / v_total_distance;
+                let v = v_distances[j][i] / v_total_distance;
                 uvs.push(vec2(u,v));
             }
         }
