@@ -12,10 +12,10 @@ async fn main() {
 
 use crate::wireframe::wireframe::apply_wireframe;
 use three_d::*;
-use std::{rc::Rc, vec};
+use std::rc::Rc;
 
-const GROUNDFILE : &str = "assets/ground.jpeg";
-const GROUNDASSET : &str = "ground";
+const GROUNDFILE : &str = "assets/earthDouble.png";
+const GROUNDASSET : &str = "earthDouble";
 const CLEARCOLOR : (f32, f32, f32, f32, f32) = (0.7, 0.8, 0.98, 1.0, 1.0);
 
 
@@ -73,14 +73,13 @@ pub async fn run() {
     
 
     let map = Rc::new(dt::terrain::Map::new());
-    let map_mesh: CpuMesh = map.create_mesh(&map.coords);
+    let map_mesh: CpuMesh = map.create_mesh(&map.coords, &map.uvs);
     let mut terrain = dt::terrain::Terrain::new(&context, Rc::clone(&map), 30, cpu_material_terrain);
     //let wireframe = apply_wireframe(&context, &terrain.cpu_mesh);
 
     // Map mesh
     let mut mesh = Gm::new(Mesh::new(&context, &map_mesh), material_map);
-    mesh.set_transformation(Matrix4::from_translation(vec3(0.0, -100.0, 0.0))); // slide down the map ribbon
-
+    mesh.set_transformation(Matrix4::from_translation(vec3(0.0, -500.0, 0.0))); // slide down the map ribbon
 
     terrain.camera_pos.x = terrain.position.x;
     terrain.camera_pos.z = terrain.position.z;
@@ -88,11 +87,11 @@ pub async fn run() {
     window.render_loop(move |mut frame_input| {
         camera.set_viewport(frame_input.viewport);
         control.handle_events(&mut camera, &mut frame_input.events);
-        terrain.camera_pos.x += 1.0;
-        terrain.camera_pos.z += 0.5;
+        terrain.camera_pos.x += 0.00001;
+        terrain.camera_pos.z += 0.00001;
         //Texture offset or rotation example
         // if let Some(texture) = terrain.mesh.material.albedo_texture.as_mut() {
-        //     texture.transformation = Mat3::from_angle_z(radians(terrain.camera_pos.x * 0.01));
+        //     texture.transformation = Mat3::from_translation(vec2(terrain.camera_pos.x, terrain.camera_pos.z));
         // }
         terrain.update();
         frame_input

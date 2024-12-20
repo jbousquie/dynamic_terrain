@@ -7,6 +7,7 @@ edition = "2021"
 fastnoise-lite = "1.1.1"
 three-d = "0.18.0"
 three-d-asset = { version="0.9.0", features = ["png", "jpeg", "http"] }
+image = "0.25.5"
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

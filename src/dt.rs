@@ -2,8 +2,9 @@ pub mod terrain {
     use fastnoise_lite::*;
 
     use crate::ribbon::ribbon::*;
-    use three_d::{vec3, ColorMaterial, Context, CpuMaterial, CpuMesh, Gm, Mesh, PhysicalMaterial, Vec3};
+    use three_d::{vec2, vec3, Context, CpuMaterial, CpuMesh, Gm, Mesh, PhysicalMaterial, Vec2, Vec3};
     use std::rc::Rc;
+    use image::ImageReader;
 
     // Number of points in the map
     // set the same value for both WIDTH and HEIGHT
@@ -12,6 +13,7 @@ pub mod terrain {
 
     pub struct Map {
         pub coords: Vec<Vec<Vec3>>,
+        pub uvs: Vec<Vec2>,
         pub length: f32,
         pub subdivisions: usize,
         pub average_sub_size: f32
@@ -20,19 +22,21 @@ pub mod terrain {
     impl Map {
 
         pub fn new() -> Self {
-            let coords = Self::create_map();
+            //let (coords, uvs) = Self::create_map();
+            let (coords, uvs) = Self::create_heightmap_from_file("assets/worldHeightMapDouble.png", 31.0, 500.0);
             let l = coords.len();
             let length = (coords[0][l - 1].z - coords[0][0].z).abs();
             let average_sub_size = length / l as f32;
             Map {
                 coords,
+                uvs,
                 length,
                 subdivisions: l,
                 average_sub_size
             }
         }
         
-        pub fn create_map() -> Vec<Vec<Vec3>> {
+        pub fn create_map() -> (Vec<Vec<Vec3>>, Vec<Vec2>) {
             let scl_x = 5.0;
             let scl_y: f32 = 100.0;
             let scl_z = scl_x;
@@ -47,7 +51,8 @@ pub mod terrain {
                }
                paths.push(path);
             }
-            paths
+            let uvs = Vec::new();
+            (paths, uvs)
         }
 
         pub fn create_noise() -> Vec<Vec<f32>> {
@@ -73,12 +78,45 @@ pub mod terrain {
         }
 
         // create a ribbon mesh from the map
-        pub fn create_mesh(&self, map :&Vec<Vec<Vec3>>) -> CpuMesh {
-            let ribbon = create_ribbon(&map);
+        pub fn create_mesh(&self, coords: &Vec<Vec<Vec3>>, uvs: &Vec<Vec2>) -> CpuMesh {
+            let ribbon = create_ribbon(&coords, &uvs);
             ribbon.into()
         }
+
+
+        // idée : stocker les données dans un fichier 
+        // https://docs.rs/image/latest/image/type.RgbImage.html
+        pub fn create_heightmap_from_file(file: &str, offset: f32, altitude_factor: f32) -> (Vec<Vec<Vec3>>, Vec<Vec2>) {
+            let filter_r = 0.3;
+            let filter_g = 0.59;
+            let filter_b = 0.11;
+            let dyn_img = ImageReader::open(file).unwrap().decode().unwrap();
+            let img = dyn_img.into_rgb8();
+            let half_width = img.width() as f32 * 0.5;
+            let half_height = img.height() as f32 * 0.5;
+            let mut data = Vec::new();
+            let mut uvs = Vec::new();
+            img.enumerate_rows().for_each(|(y, row)| {
+                let mut path = Vec::new();
+                row.enumerate().for_each(|(x, pixel)| {
+                    let rgb = pixel.2   ;
+                    let r = rgb[0] as f32;
+                    let g = rgb[1] as f32;  
+                    let b = rgb[2] as f32;
+                    let gradient = (r * filter_r + g * filter_g + b * filter_b) / 255.0;
+                    let altitude = gradient * altitude_factor;
+                    let v3 = vec3((x as f32 - half_width) * offset, altitude, (y as f32 - half_height) * offset);
+                    let uv = vec2(x as f32 / img.width() as f32, y as f32 / img.height() as f32);
+                    path.push(v3);
+                    uvs.push(uv);
+                });
+                data.push(path);
+            });
+
+            
+            (data, uvs)
+        }
     }
-    // Create and configure the FastNoise object
 
 
 
@@ -90,7 +128,8 @@ pub mod terrain {
         pub cpu_material: CpuMaterial,
         pub mesh: Gm<Mesh, PhysicalMaterial>,
         pub paths: Vec<Vec<Vec3>>,
-        pub position: Vec3,
+        pub uvs: Vec<Vec2>,
+        pub position: Vec3,       // mesh logical coordinates
         pub sub_tolerance: i32,   // how many cells flyable over by the camera on the terrain axis before trigger an update
         pub camera_pos: Vec3,
         delta_sub_x: i32,         // how many cells flought over thy the camera on the terrain x axis 
@@ -98,7 +137,7 @@ pub mod terrain {
     }
     impl Terrain {
         pub fn new(context: &Context, map: Rc<Map>, size: usize, cpu_material: CpuMaterial) -> Self {
-            let (cpu_mesh, paths) = Self::create_cpu_mesh(&map.coords, size);
+            let (cpu_mesh, paths, uvs) = Self::create_cpu_mesh(&map.coords, &map.uvs, size);
             let ht = (size as f32 * 0.5) as usize;                      // half size of the terrain in quads
             let hm = (map.subdivisions as f32 * 0.5) as usize;          // half size of the map in quads
             let terrain_index = hm - ht;                                // index of the first quad of the terrain in the map
@@ -122,6 +161,7 @@ pub mod terrain {
                 cpu_material,
                 mesh,
                 paths,
+                uvs,
                 position,
                 sub_tolerance: 1,
                 camera_pos: Vec3::new(0.0, 0.0, 0.0),
@@ -130,22 +170,25 @@ pub mod terrain {
             }
         }
         // create a terrain mesh
-        pub fn create_cpu_mesh(coords: &Vec<Vec<Vec3>>, size: usize) -> (CpuMesh, Vec<Vec<Vec3>>) {
+        pub fn create_cpu_mesh(coords: &Vec<Vec<Vec3>>, map_uvs: &Vec<Vec2>, size: usize) -> (CpuMesh, Vec<Vec<Vec3>>, Vec<Vec2>) {
             let ht = (size as f32 * 0.5) as usize;
             let hm = (coords.len() as f32 * 0.5) as usize;
             let start_index = hm - ht;
             let nb_vertices = size + 1;
             let mut paths = Vec::new();
+            let mut uvs = Vec::new();
             for i in 0..nb_vertices{
                 let mut path = Vec::new();
                 for j in 0..nb_vertices {
                     let v3 = coords[start_index + i][start_index + j].clone();
                     path.push(v3);
+                    let uv = map_uvs[(start_index + i) * nb_vertices + start_index + j].clone();
+                    uvs.push(uv);
                 }
                 paths.push(path);
             }
-            let ribbon = create_ribbon(&paths);
-            (ribbon.into(), paths)
+            let ribbon = create_ribbon(&paths, &uvs);
+            (ribbon.into(), paths, uvs)
         }
 
         // https://github.com/BabylonJS/Extensions/blob/master/DynamicTerrain/src/babylon.dynamicTerrain.ts#L470
@@ -182,21 +225,16 @@ pub mod terrain {
         }
 
         pub fn update_mesh(&mut self) {
-            //let mut paths = vec!();
             let nb_vertices = self.size + 1;
             for i in 0..nb_vertices {
-                //let mut path = vec!();
                 let map_i = Self::modulo(self.delta_sub_x + i as i32, self.map.subdivisions as i32);
                 for j in 0..nb_vertices {
                     let map_j = Self::modulo(self.delta_sub_z + j as i32, self.map.subdivisions as i32);
                     let v3 = self.map.coords[map_i as usize][map_j as usize];
-                    //path.push(v3);
                     self.paths[i][j].y = v3.y;
                 }
-                //paths.push(path);
             }
-            //morph_ribbon(&mut self.mesh.geometry, &mut &paths);
-            morph_ribbon(&mut self.mesh.geometry, &mut &self.paths);
+            morph_ribbon(&mut self.mesh.geometry, &mut &self.paths, &self.uvs);
         }
     }
 
