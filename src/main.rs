@@ -66,7 +66,7 @@ pub async fn run() {
    // terrain material
    let cpu_material_terrain = CpuMaterial {
         albedo: Srgba { r: 255, g: 255, b: 255, a: 255, },
-        albedo_texture: Some(cpu_texture),
+        //albedo_texture: Some(cpu_texture),
 
         ..Default::default()
     };
@@ -74,8 +74,9 @@ pub async fn run() {
 
     let map = Rc::new(dt::terrain::Map::new());
     let map_mesh: CpuMesh = map.create_mesh(&map.coords, &map.uvs);
-    let mut terrain = dt::terrain::Terrain::new(&context, Rc::clone(&map), 30, cpu_material_terrain);
-    //let wireframe = apply_wireframe(&context, &terrain.cpu_mesh);
+    let mut terrain = dt::terrain::Terrain::new(&context, Rc::clone(&map), 200, cpu_material_terrain);
+    //let mut wireframe = apply_wireframe(&context, &map_mesh);
+    //wireframe.set_transformation(Matrix4::from_translation(vec3(0.0, -500.0, 0.0))); // slide down the wireframe
 
     // Map mesh
     let mut mesh = Gm::new(Mesh::new(&context, &map_mesh), material_map);
@@ -87,8 +88,9 @@ pub async fn run() {
     window.render_loop(move |mut frame_input| {
         camera.set_viewport(frame_input.viewport);
         control.handle_events(&mut camera, &mut frame_input.events);
-        terrain.camera_pos.x += 0.00001;
-        terrain.camera_pos.z += 0.00001;
+        terrain.camera_pos.x += 1.0;
+        terrain.camera_pos.z -= 3.0;
+        terrain.mesh.set_transformation(Matrix4::from_translation(vec3(terrain.position.x, 0.0, terrain.position.z)));
         //Texture offset or rotation example
         // if let Some(texture) = terrain.mesh.material.albedo_texture.as_mut() {
         //     texture.transformation = Mat3::from_translation(vec2(terrain.camera_pos.x, terrain.camera_pos.z));
@@ -99,7 +101,8 @@ pub async fn run() {
             .clear(ClearState::color_and_depth(CLEARCOLOR.0, CLEARCOLOR.1, CLEARCOLOR.2, CLEARCOLOR.3, CLEARCOLOR.4))
             .render(
                 &camera,
-                mesh.into_iter().chain(&terrain.mesh),
+                [&mesh, &terrain.mesh],
+                //.chain(&wireframe),
                 &[&light0, &ambient],
             );
 

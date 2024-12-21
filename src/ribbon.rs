@@ -128,10 +128,11 @@ pub mod ribbon {
             }
         }
         let vb_pos = mesh.positions_mut();
-        
         vb_pos.fill(&positions);
-        if let Some(vb_uvs) = mesh.uvs_mut() {
-            vb_uvs.fill(&uvs);
+        if uvs.len() > 0 {
+            if let Some(vb_uvs) = mesh.uvs_mut()  {
+                vb_uvs.fill(&uvs);
+            }
         }
     }
 

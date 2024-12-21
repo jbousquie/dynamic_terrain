@@ -8,8 +8,8 @@ pub mod terrain {
 
     // Number of points in the map
     // set the same value for both WIDTH and HEIGHT
-    const WIDTH: usize = 500;
-    const HEIGHT: usize = 500;
+    const WIDTH: usize = 1280;
+    const HEIGHT: usize = 1280;
 
     pub struct Map {
         pub coords: Vec<Vec<Vec3>>,
@@ -23,9 +23,9 @@ pub mod terrain {
 
         pub fn new() -> Self {
             //let (coords, uvs) = Self::create_map();
-            let (coords, uvs) = Self::create_heightmap_from_file("assets/worldHeightMapDouble.png", 31.0, 500.0);
+            let (coords, uvs) = Self::create_heightmap_from_file("assets/worldHeightMapDouble.png", 5.0, 100.0);
             let l = coords.len();
-            let length = (coords[0][l - 1].z - coords[0][0].z).abs();
+            let length = (coords[0][l - 1].x - coords[0][0].x).abs();
             let average_sub_size = length / l as f32;
             Map {
                 coords,
@@ -44,10 +44,13 @@ pub mod terrain {
             let hh = HEIGHT as f32 * 0.5;
             let noise_data = Self::create_noise();
             let mut paths = Vec::new();
-            for x in 0..WIDTH {
+            for j in 0..WIDTH {
                let mut path = Vec::new();
-               for y in 0..HEIGHT {
-                   path.push(vec3((x as f32 - hw) * scl_x, noise_data[x][y] * scl_y * ((x as f32 + y as f32) * 0.01).sin(), (y as f32 - hh) * scl_z));
+               for i in 0..HEIGHT {
+                    let x = (i as f32 - hw) * scl_x;
+                    let y = noise_data[j][i] * scl_y * ((i as f32 + j as f32) * 0.01).sin();
+                    let z = (j as f32 - hh) * scl_z;
+                   path.push(vec3(x, y, z));
                }
                paths.push(path);
             }
@@ -96,19 +99,21 @@ pub mod terrain {
             let half_height = img.height() as f32 * 0.5;
             let mut data = Vec::new();
             let mut uvs = Vec::new();
-            img.enumerate_rows().for_each(|(y, row)| {
+            img.enumerate_rows().for_each(|(j, row)| {
                 let mut path = Vec::new();
-                row.enumerate().for_each(|(x, pixel)| {
+                row.enumerate().for_each(|(i, pixel)| {
                     let rgb = pixel.2   ;
                     let r = rgb[0] as f32;
                     let g = rgb[1] as f32;  
                     let b = rgb[2] as f32;
                     let gradient = (r * filter_r + g * filter_g + b * filter_b) / 255.0;
                     let altitude = gradient * altitude_factor;
-                    let v3 = vec3((x as f32 - half_width) * offset, altitude, (y as f32 - half_height) * offset);
-                    let uv = vec2(x as f32 / img.width() as f32, y as f32 / img.height() as f32);
+                    let x = (i as f32 - half_width) * offset;
+                    let z = (j as f32 - half_height) * offset;
+                    let v3 = vec3(x, altitude, z);
+                    let uv = vec2(i as f32 / img.width() as f32, j as f32 / img.height() as f32);
                     path.push(v3);
-                    uvs.push(uv);
+                    //uvs.push(uv);
                 });
                 data.push(path);
             });
@@ -177,13 +182,16 @@ pub mod terrain {
             let nb_vertices = size + 1;
             let mut paths = Vec::new();
             let mut uvs = Vec::new();
+            let l = map_uvs.len();
             for i in 0..nb_vertices{
                 let mut path = Vec::new();
                 for j in 0..nb_vertices {
                     let v3 = coords[start_index + i][start_index + j].clone();
                     path.push(v3);
-                    let uv = map_uvs[(start_index + i) * nb_vertices + start_index + j].clone();
-                    uvs.push(uv);
+                    if l > 0 {
+                        let uv = map_uvs[(start_index + i) * nb_vertices + start_index + j].clone();
+                        uvs.push(uv);
+                    }
                 }
                 paths.push(path);
             }
