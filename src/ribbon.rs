@@ -82,7 +82,7 @@ pub mod ribbon {
             for i in 0..p {
                 for j in 0..l {
                     let u = u_distances[i][j] / u_total_distance;
-                    let v = v_distances[j][i] / v_total_distance;
+                    let v = 1.0 - v_distances[j][i] / v_total_distance;
                     ribbon_uvs.push(vec2(u,v));
                 }
             }

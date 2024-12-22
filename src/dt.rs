@@ -111,9 +111,11 @@ pub mod terrain {
                     let x = (i as f32 - half_width) * offset;
                     let z = (j as f32 - half_height) * offset;
                     let v3 = vec3(x, altitude, z);
-                    let uv = vec2(i as f32 / img.width() as f32, j as f32 / img.height() as f32);
+                    let u = i as f32 / img.width() as f32;
+                    let v = 1.0 - j as f32 / img.height() as f32;
+                    let uv = vec2(u, v);
                     path.push(v3);
-                    //uvs.push(uv);
+                    uvs.push(uv);
                 });
                 data.push(path);
             });
@@ -189,7 +191,7 @@ pub mod terrain {
                     let v3 = coords[start_index + i][start_index + j].clone();
                     path.push(v3);
                     if l > 0 {
-                        let uv = map_uvs[(start_index + i) * nb_vertices + start_index + j].clone();
+                        let uv = map_uvs[(start_index + j) * nb_vertices + start_index + i].clone();
                         uvs.push(uv);
                     }
                 }
@@ -235,11 +237,13 @@ pub mod terrain {
         pub fn update_mesh(&mut self) {
             let nb_vertices = self.size + 1;
             for i in 0..nb_vertices {
-                let map_i = Self::modulo(self.delta_sub_x + i as i32, self.map.subdivisions as i32);
+                let map_i = Self::modulo(self.delta_sub_z + i as i32, self.map.subdivisions as i32);
                 for j in 0..nb_vertices {
-                    let map_j = Self::modulo(self.delta_sub_z + j as i32, self.map.subdivisions as i32);
+                    let map_j = Self::modulo(self.delta_sub_x + j as i32, self.map.subdivisions as i32);
                     let v3 = self.map.coords[map_i as usize][map_j as usize];
                     self.paths[i][j].y = v3.y;
+                    self.uvs[i * nb_vertices + j].x = self.map.uvs[map_i as usize * self.map.subdivisions + map_j as usize].x;
+                    self.uvs[i * nb_vertices + j].y = self.map.uvs[map_i as usize * self.map.subdivisions + map_j as usize].y;
                 }
             }
             morph_ribbon(&mut self.mesh.geometry, &mut &self.paths, &self.uvs);

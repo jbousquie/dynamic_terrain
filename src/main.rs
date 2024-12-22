@@ -66,7 +66,7 @@ pub async fn run() {
    // terrain material
    let cpu_material_terrain = CpuMaterial {
         albedo: Srgba { r: 255, g: 255, b: 255, a: 255, },
-        //albedo_texture: Some(cpu_texture),
+        albedo_texture: Some(cpu_texture),
 
         ..Default::default()
     };
@@ -88,9 +88,9 @@ pub async fn run() {
     window.render_loop(move |mut frame_input| {
         camera.set_viewport(frame_input.viewport);
         control.handle_events(&mut camera, &mut frame_input.events);
-        terrain.camera_pos.x += 1.0;
-        terrain.camera_pos.z -= 3.0;
-        terrain.mesh.set_transformation(Matrix4::from_translation(vec3(terrain.position.x, 0.0, terrain.position.z)));
+        terrain.camera_pos.x += 3.0;
+        terrain.camera_pos.z += 15.0;
+        //terrain.mesh.set_transformation(Matrix4::from_translation(vec3(terrain.position.x, 0.0, terrain.position.z)));
         //Texture offset or rotation example
         // if let Some(texture) = terrain.mesh.material.albedo_texture.as_mut() {
         //     texture.transformation = Mat3::from_translation(vec2(terrain.camera_pos.x, terrain.camera_pos.z));
