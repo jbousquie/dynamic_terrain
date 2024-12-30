@@ -23,7 +23,7 @@ pub mod terrain {
 
         pub fn new() -> Self {
             //let (coords, uvs) = Self::create_map();
-            let (coords, uvs) = Self::create_heightmap_from_file("assets/worldHeightMapDouble.png", 5.0, 100.0);
+            let (coords, uvs) = Self::create_heightmap_from_file("assets/worldHeightMapDouble.png", 5.0, 80.0);
             let l = coords.len();
             let length = (coords[0][l - 1].x - coords[0][0].x).abs();
             let average_sub_size = length / l as f32;
